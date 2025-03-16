@@ -85,6 +85,9 @@ class LibraryManager
                 while ((line = sr.ReadLine()) != null)
                 {
                     string[] parts = line.Split(',');
+                    if(parts.Count() < 3){
+                        System.Console.WriteLine("Incorrenct number of lines, skipping");
+                    }
                     int.TryParse(parts[2].Trim(), out int newYear);
                     books.Add(new Book(parts[0].Trim(), parts[1].Trim(), newYear));
                 }
@@ -104,6 +107,7 @@ class Program
     {
         bool work = true;
         LibraryManager Library = new LibraryManager();
+        Library.ReadFromFile("test.txt");
         while (work)
         {
             System.Console.WriteLine("\nChoose action:");
