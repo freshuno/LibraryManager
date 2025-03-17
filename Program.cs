@@ -21,7 +21,14 @@ class LibraryManager
     public void AddBook(string title, string author, int year)
     {
         Book newBook = new Book(title, author, year);
-        books.Add(newBook);
+        if (!books.Exists(b => b.Title == title))
+        {
+            books.Add(newBook);
+        }
+        else
+        {
+            System.Console.WriteLine("Such book already exists");
+        }
     }
     public void RemoveBook(string title)
     {
@@ -49,7 +56,7 @@ class LibraryManager
     }
     public void SaveToFile(string fileName)
     {
-        if (books.Count()>0)
+        if (books.Count() > 0)
         {
             try
             {
@@ -61,11 +68,10 @@ class LibraryManager
                     }
                     System.Console.WriteLine("Saved Succesfully");
                 }
-
             }
             catch (Exception e)
             {
-                System.Console.WriteLine("Critical failure");
+                System.Console.WriteLine($"Critical failure");
             }
 
         }
@@ -75,9 +81,11 @@ class LibraryManager
         }
 
     }
-    public void ReadFromFile(string fileName)
+    public void ReadFromFile(string fileName, bool displayStatus)
     {
         string line = "";
+        int countAdded = 0;
+        int countExists = 0;
         try
         {
             using (StreamReader sr = new StreamReader(fileName))
@@ -85,11 +93,24 @@ class LibraryManager
                 while ((line = sr.ReadLine()) != null)
                 {
                     string[] parts = line.Split(',');
-                    if(parts.Count() < 3){
+                    if (parts.Count() < 3)
+                    {
                         System.Console.WriteLine("Incorrenct number of lines, skipping");
                     }
                     int.TryParse(parts[2].Trim(), out int newYear);
-                    books.Add(new Book(parts[0].Trim(), parts[1].Trim(), newYear));
+                    if (!books.Exists(x => x.Title.Equals(parts[0].Trim(), StringComparison.OrdinalIgnoreCase)))
+                    {
+                        AddBook(parts[0].Trim(), parts[1].Trim(), newYear);
+                        countAdded++;
+                    }
+                    else
+                    {
+                        countExists++;
+                    }
+                }
+                if (displayStatus)
+                {
+                    System.Console.WriteLine($"{countAdded} books added, {countExists} already exist");
                 }
             }
         }
@@ -107,7 +128,7 @@ class Program
     {
         bool work = true;
         LibraryManager Library = new LibraryManager();
-        Library.ReadFromFile("test.txt");
+        Library.ReadFromFile("test.txt", false);
         while (work)
         {
             System.Console.WriteLine("\nChoose action:");
@@ -124,16 +145,22 @@ class Program
                     case 1:
                         System.Console.WriteLine("\nThe title: ");
                         string title = Console.ReadLine();
+                        if (string.IsNullOrWhiteSpace(title)){
+                           System.Console.WriteLine("Title must not be empty!");
+                           break;
+                        }
                         System.Console.WriteLine("The author: ");
                         string author = Console.ReadLine();
+                        if (string.IsNullOrWhiteSpace(author)){
+                            System.Console.WriteLine("Author must not be empty");
+                            break;
+                        }
                         System.Console.WriteLine("Release year: ");
-                        bool correctYear = true;
-                        while (correctYear)
+                        while (true)
                         {
                             if (int.TryParse(Console.ReadLine(), out int year))
                             {
                                 Library.AddBook(title, author, year);
-                                System.Console.WriteLine("Book added succesfully");
                                 break;
                             }
                             System.Console.WriteLine("Type correct year.");
@@ -151,7 +178,7 @@ class Program
                         Library.SaveToFile("test.txt");
                         break;
                     case 5:
-                        Library.ReadFromFile("test.txt");
+                        Library.ReadFromFile("test.txt", true);
                         break;
                     case 6:
                         System.Console.WriteLine("Quitting...");
