@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics.Tracing;
 using Microsoft.Win32.SafeHandles;
+using System.Text.Json;
 
 class Book
 {
@@ -66,7 +67,7 @@ class LibraryManager
                     {
                         sw.WriteLine($"{b.Title}, {b.Author}, {b.Year}");
                     }
-                    System.Console.WriteLine("Saved Succesfully");
+                    System.Console.WriteLine("Saved Succesfully to " + fileName);
                 }
             }
             catch (Exception e)
@@ -116,9 +117,56 @@ class LibraryManager
         }
         catch (Exception e)
         {
-            System.Console.WriteLine("Critical failure");
+            System.Console.WriteLine(e.Message);
         }
+    }
+    public void SaveToJson(string fileName)
+    {
+        try
+        {
+            string jsonString = JsonSerializer.Serialize(books, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(fileName, jsonString);
+            System.Console.WriteLine("Saved to " + fileName);
+        }
+        catch (Exception e)
+        {
+            System.Console.WriteLine(e.Message);
+        }
+    }
+    public void ReadFromJson(string fileName)
+    {
+        try
+        {
+            if (File.Exists(fileName))
+            {
+                string jsonString = File.ReadAllText(fileName);
+                List<Book> importedBooks = JsonSerializer.Deserialize<List<Book>>(jsonString);
 
+                int countAdded = 0;
+                int countExists = 0;
+                foreach (var book in importedBooks)
+                {
+                    if (!books.Exists(b => b.Title.Equals(book.Title, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        books.Add(book);
+                        countAdded++;
+                    }
+                    else
+                    {
+                        countExists++;
+                    }
+                }
+                System.Console.WriteLine($"{countAdded} added, {countExists} already exist");
+            }
+            else
+            {
+                System.Console.WriteLine("JSON file doesn't exist.");
+            }
+        }
+        catch (Exception e)
+        {
+            System.Console.WriteLine("Błąd podczas odczytu JSON: " + e.Message);
+        }
     }
 }
 
@@ -137,7 +185,9 @@ class Program
             System.Console.WriteLine("3. Display all books");
             System.Console.WriteLine("4. Export books to file");
             System.Console.WriteLine("5. Import books from file");
-            System.Console.WriteLine("6. Quit");
+            System.Console.WriteLine("6. Save to JSON file");
+            System.Console.WriteLine("7. Import from JSON file");
+            System.Console.WriteLine("8. Quit");
             if (int.TryParse(Console.ReadLine(), out int choice))
             {
                 switch (choice)
@@ -175,12 +225,26 @@ class Program
                         Library.ListBooks();
                         break;
                     case 4:
-                        Library.SaveToFile("test.txt");
+                        Console.WriteLine("Type file name");
+                        string fileName = Console.ReadLine();
+                        Library.SaveToFile(fileName + ".txt");
                         break;
                     case 5:
-                        Library.ReadFromFile("test.txt", true);
+                        Console.WriteLine("Type file name");
+                        string fileNameSave = Console.ReadLine();
+                        Library.ReadFromFile(fileNameSave + ".txt", true);
                         break;
                     case 6:
+                        Console.WriteLine("Type JSON file name:");
+                        string jsonFileName = Console.ReadLine();
+                        Library.SaveToJson(jsonFileName + ".json");
+                        break;
+                    case 7:
+                        Console.WriteLine("Type JSON file name:");
+                        string jsonFileNameImport = Console.ReadLine();
+                        Library.ReadFromJson(jsonFileNameImport + ".json");
+                        break;
+                    case 8:
                         System.Console.WriteLine("Quitting...");
                         work = false;
                         break;
@@ -193,8 +257,6 @@ class Program
             {
                 System.Console.WriteLine("Choose correct option");
             }
-
         }
-
     }
 }
